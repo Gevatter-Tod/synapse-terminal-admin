@@ -1,4 +1,4 @@
-# synapse-admin
+# synapse-terminal-admin
 a more simplified administration tool for the Synapse Matrix server
 
 DONE
