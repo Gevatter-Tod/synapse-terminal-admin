@@ -60,10 +60,9 @@ function userlist {
 
     echo "Query usernames..."
     echo ""
-    TEMPLIST=$(curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v2/users?from=0")
+    local TEMPLIST=$(curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v2/users?from=0")
     echo "Usernames:"
 
-    USERLIST=$(echo $TEMPLIST | tr "},{" "\n")
     for y in $TEMPLIST  
     do
     jq '.users[] | {name: .name}' <<< "$y" | sed "s/{//g;s/}//g;/^$/d;s/\"name\"://g;s/\"//g"  
@@ -85,24 +84,29 @@ fi
 }
 
 function user_get {
-fix_userid "$1"
 if [ -z "$USER" ]
 then help_user; return
-elif ! [[ "$USER" == *"@"* ]]
-then USER="@$USER"
-fi
-if ! [[ "$USER" == *"$SERVER_ADDRESS"* ]]
-then USER="$USER:$SERVER_ADDRESS"
 fi
 printf "\nQuery User: $USER \n"
 curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$USER" | jq
 
 }
 
+function user_media {
+
+echo "User $USER Media:"
+echo ""
+local TEMPLIST=$(curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/users/$USER/media")
+
+for y in $TEMPLIST  
+do
+    jq '.media[3] | {media_id: .media_id, media_type: .media_type}' <<< "$TEMPLIST" | sed "s/{//g;s/}//g;/^$/d;s/\"name\"://g;s/\"//g"  
+done  
+
+}
 
 function user_change {
-fix_userid "$1"
-echo $USER
+echo "Identified User $USER..."
 if [ -z "$2" ]; then help_user; return
 elif [ "$2" = "displayname" ]
     then echo "setting displayname to $3"
@@ -127,8 +131,9 @@ then
     elif [ "$1" = "userlist" ]; then userlist
     elif [ "$1" = "server" ]; then server
     elif [ "$1" = "user" ]
-        then if [ "$3" = "set" ]
-        then user_change "$2" "$4" "$5"
+        fix_userid "$2"
+        then if [ "$3" = "set" ]; then user_change "$2" "$4" "$5"
+        elif [ "$3" = "media" ]; then user_media "$2"
         else user_get "$2"
         fi
     else echo "command unkown"
