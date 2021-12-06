@@ -63,7 +63,7 @@ echo ""
 echo "Available options:"
 echo "  displayname <value> - change the display name to the <value>"
 echo "  media               - Display media list"
-#echo "  password - change the password"
+echo "  password            - change the password"
 
 }
 
@@ -115,12 +115,34 @@ jq '.media[] | {media_id: .media_id, media_type: .media_type, quarantined_by: .q
 }
 
 #This function triggers changes to user accounts
+#TODO: #1 This needs a check for "new user generation", so that no new users are generated accidentially
 function user_change {
 echo "Identified user $M_USER..."
 if [ -z "$2" ]; then help_user; return
 elif [ "$2" = "displayname" ]
     then echo "setting displayname to $3"
     curl -s --header "Authorization: Bearer $ADMINTOKEN" -X PUT "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$M_USER" -d '{ "displayname": "'"$3"'" }' | jq
+#Section to change password
+elif [ "$2" = "password" ]
+    then echo "this will change the password of the user. All devices are logged out! Continue?"
+    read -p "[y/n]: " yn
+        case $yn in
+            [Yy]*) read -s -p "please enter password: " M_PW;
+            echo "";
+            read -s -p "please repeate password: " M_PW2;
+            echo ""
+            if [ $M_PW = $M_PW2 ];
+            then curl -s --header "Authorization: Bearer $ADMINTOKEN" -X PUT "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$M_USER" -d '{ "password": "'"$M_PW"'" }' | jq;
+            return;
+            else echo "PW dont match, aborting"; return;
+            fi
+            echo "this is the password: $M_PW"
+            echo "yn"
+            ;;
+
+            [Nn]) echo "Aborted" ; return ;;
+            *) echo "wrong input"; return;;
+        esac
 fi
 
 }
