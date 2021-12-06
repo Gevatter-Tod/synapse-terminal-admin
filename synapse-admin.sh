@@ -44,10 +44,13 @@ echo "Usage:"
 echo "synapse-admin.sh [command]"
 echo ""
 echo "available commands"
-echo "  help - displays this section"
-echo "  userlist - queries usernames and caches them locally"
-echo "  server - displays the server version"
-echo "  user - display and manipulate individaul accounts"
+echo "  help        - displays this section"
+echo "  server      - displays the server version and status of background updates"
+echo "  userlist    - queries usernames and caches them locally"
+echo "  user        - display and manipulate individual accounts"
+echo "  event       - list events"
+echo "  roomlist    - lists all rooms on the server"
+echo "  room        - display and manipulate individual rooms"
 echo ""
 
 }
@@ -64,6 +67,22 @@ echo "Available options:"
 echo "  displayname <value> - change the display name to the <value>"
 echo "  media               - Display media list"
 echo "  password            - change the password"
+
+}
+
+
+# Displaying help for the room subsection
+function help_room {
+
+echo ""
+echo "Usage:"
+echo "Query details of the room: synapse-admin.sh room ['room_id' / roomname]"
+echo "Change room settings: synapse-admin.sh user ['room_id' / roomname] set [options] <value>"
+echo "Important! you need to put room_id in ' '. Bash otherwise throws an error as roomnames start with '"!"'"
+echo ""
+echo "Available options:"
+echo "  members     - displays member list for room_id"
+echo "  state       - lists room state"
 
 }
 
@@ -150,7 +169,63 @@ fi
 # This function queries the server Version
 function server {
 
-   curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/server_version" | jq '.'
+    case $1 in
+    enable-updates)
+    # TODO: #2 Enabling and disabling background updates runs into error. Functionality has been disabled.  
+    # echo "Enabling background updates"
+    # curl -s --header "Authorization: Bearer $ADMINTOKEN" -X PUT "https://$SERVER_ADDRESS/_synapse/admin/v1/background_updates/start_job" -d '{ "job_name": "populate_stats_process_rooms" }'
+    return;;
+    disable-updates)
+    # echo "Disabling Background updates"
+    # curl -s --header "Authorization: Bearer $ADMINTOKEN" -X PUT "https://$SERVER_ADDRESS/_synapse/admin/v1/background_updates/enabled" -d '{ "enabled": false }'
+    return;;
+    *)
+    # echo "To enable/diable database background updates run ./synapse-admin.sh server enable-updates/disable-updates"
+    echo ""
+    echo "Server version"
+    curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/server_version" | jq '.'
+    echo "Status background updates"
+    curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/background_updates/status" | jq '.'
+    esac
+}
+
+
+# Distplays list of events
+function event_report {
+
+echo "event report"
+curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/event_reports?from=0" | jq '.'
+
+}
+
+
+# Lists rooms
+function roomlist {
+
+echo "List of rooms"
+curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/rooms" | jq '.'
+
+}
+
+#function to get details from a room
+function room_get  {
+
+if [ ${1:0:1} = '!' ]
+then
+    case $2 in
+    members | state)
+        echo "Listing $2 for room $1"
+        curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/rooms/$1/$2" | jq '.'
+        return;;
+    *)
+        echo "room details for room_id $1"
+        curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/rooms/$1" | jq '.';;
+    esac
+else
+    echo "Seraching for room containing $1"
+    curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v1/rooms?search_term=$1" | jq '.'
+fi
+
 }
 
 
@@ -161,12 +236,21 @@ if test -f ~/.synapse-admin/synapse-admin.conf
 then
 # Reading config
     echo "synapse-admin.conf found"
+    echo ""
     read_config
 # Executing command
     if [ -z "$1" ]  || [ "$1" = "help" ]
     then help
     elif [ "$1" = "userlist" ]; then userlist
-    elif [ "$1" = "server" ]; then server
+    elif [ "$1" = "server" ]; then server $2
+    elif [ "$1" = "event" ]; then event_report
+    elif [ "$1" = "roomlist" ]; then roomlist
+    elif [ "$1" = "room" ]; 
+        then 
+        if ! [ -z "$2" ]
+        then room_get $2 $3
+        else help_room
+        fi
     elif [ "$1" = "user" ]
         then
         if ! [ -z "$2" ]

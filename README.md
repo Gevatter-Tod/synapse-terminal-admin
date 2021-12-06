@@ -7,10 +7,11 @@ It is in Alpha stage and not all commands are implemented. It currently does all
 I plan to implement all the other functions in the near future.
 
 
-**Installation**
+**Installation:**
 - Download the "synapse-admin.sh" script
 - Make it executable (e.g. with "chmod 755 ./synapse-admin.sh" )
-- On the first run, the script will ask for the server name and the admin access token. Both information will stay on your PC an will be stored in "~/.synapse-admin/synapse-admin.con"
+- On the first run, the script will ask for the server name and the admin access token. Both information will stay on your PC an will be stored in "~/.synapse-admin/synapse-admin.conf"
 
 **Useage**
+
 Just run "./synapse-admin.sh" to see a description of implemented commands
