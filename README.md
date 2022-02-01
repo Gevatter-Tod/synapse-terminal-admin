@@ -19,10 +19,11 @@ Just run "./synapse-admin.sh" to see a description of implemented commands
 synapse-admin.sh [command]
 
 available commands
-  help        - displays this section
-  server      - displays the server version and status of background updates
-  userlist    - queries usernames and caches them locally
-  user        - display and manipulate individual accounts
-  event       - list events
-  roomlist    - lists all rooms on the server
-  room        - display and manipulate individual rooms
+
+help        - displays this section
+server      - displays the server version and status of background updates
+userlist    - queries usernames and caches them locally
+user        - display and manipulate individual accounts
+event       - list events
+roomlist    - lists all rooms on the server
+room        - display and manipulate individual rooms
