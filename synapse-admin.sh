@@ -77,7 +77,7 @@ function help_room {
 echo ""
 echo "Usage:"
 echo "Query details of the room: synapse-admin.sh room ['room_id' / roomname]"
-echo "Change room settings: synapse-admin.sh user ['room_id' / roomname] set [options] <value>"
+echo "Change room settings: synapse-admin.sh user ['room_id' / roomname] [options] <value>"
 echo "Important! you need to put room_id in ' '. Bash otherwise throws an error as roomnames start with '"!"'"
 echo ""
 echo "Available options:"
