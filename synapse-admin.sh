@@ -62,13 +62,13 @@ echo ""
 echo "Usage:"
 echo "Query details of the user: synapse-admin.sh user [username] [options]"
 echo "Available options:"
-echo "  media               - Display media list"
+echo "  media                  - Display media list"
+echo "  create                 - Create a new user with the given [username]"
+echo "  set                    - Apply changes to the user:"
+echo "    displayname <value>  - Change display Name"
+echo "    password             - Change the Users Password"
+echo "  deactivate             - Deactivates the user"
 echo ""
-echo "Change user settings: synapse-admin.sh user [username] set [options] <value>"
-echo ""
-echo "Available "set" options:"
-echo "  displayname <value> - change the display name to the <value>"
-echo "  password            - change the password"
 
 }
 
@@ -171,11 +171,45 @@ fi
 
 }
 
+
+# Function to create a new User
+function user_create {
+
+
+USER_EXISTING=$(curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$M_USER")
+if [[ "$USER_EXISTING" = *"M_NOT_FOUND"* ]]
+    then echo "Creating User $M_USER"
+        read -p "Enter the Displayname for the user $M_USER: " displayname
+        read -sp "Enter the password: " password
+        echo "Creating User..."
+        curl -s --header "Authorization: Bearer $ADMINTOKEN" -X PUT "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$M_USER" -d '{"password": "'"$password"'", "displayname": "'"$displayname"'", "admin": false}'
+    else echo "User $M_USER already existing"; return
+fi
+}
+
+#Function to deactivate a user
+function user_deactivate {
+USER_EXISTING=$(curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$M_USER")
+if [[ "$USER_EXISTING" = *"M_NOT_FOUND"* ]]
+    then echo "Username not found, aborting"; echo ""; return
+fi
+echo "this will deactivate User $M_USER. Continue?"
+    read -p "[y/n]: " yn
+        case $yn in
+            [Yy]*) echo "deactivating..."; curl -s --header "Authorization: Bearer $ADMINTOKEN" -X POST "https://$SERVER_ADDRESS/_synapse/admin/v1/deactivate/$M_USER"; return;;
+            [Nn]) echo "Aborted" ; return ;;
+            *) echo "wrong input"; return;;
+        esac
+
+}
+
+
+
 # This function queries the server Version
 function server {
 
     case $1 in
-    enable-updates)
+    enable-updates) 
     # TODO: #2 Enabling and disabling background updates runs into error. Functionality has been disabled.  
     # echo "Enabling background updates"
     # curl -s --header "Authorization: Bearer $ADMINTOKEN" -X PUT "https://$SERVER_ADDRESS/_synapse/admin/v1/background_updates/start_job" -d '{ "job_name": "populate_stats_process_rooms" }'
@@ -263,6 +297,8 @@ then
         fi
         if [ "$3" = "set" ]; then user_change "$2" "$4" "$5"
         elif [ "$3" = "media" ]; then user_media "$2"
+        elif [ "$3" = "create" ]; then user_create "$2"
+        elif [ "$3" = "deactivate" ]; then user_deactivate "$2"
         else user_get "$2"
         fi
     else echo "command unkown"
