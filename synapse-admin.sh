@@ -60,12 +60,14 @@ function help_user {
 
 echo ""
 echo "Usage:"
-echo "Query details of the user: synapse-admin.sh user [username]"
+echo "Query details of the user: synapse-admin.sh user [username] [options]"
+echo "Available options:"
+echo "  media               - Display media list"
+echo ""
 echo "Change user settings: synapse-admin.sh user [username] set [options] <value>"
 echo ""
-echo "Available options:"
+echo "Available "set" options:"
 echo "  displayname <value> - change the display name to the <value>"
-echo "  media               - Display media list"
 echo "  password            - change the password"
 
 }
@@ -134,9 +136,12 @@ jq '.media[] | {media_id: .media_id, media_type: .media_type, quarantined_by: .q
 }
 
 #This function triggers changes to user accounts
-#TODO: #1 This needs a check for "new user generation", so that no new users are generated accidentially
 function user_change {
 echo "Identified user $M_USER..."
+USER_EXISTING=$(curl -s --header "Authorization: Bearer $ADMINTOKEN" "https://$SERVER_ADDRESS/_synapse/admin/v2/users/$M_USER" | jq '{errcode: .errcode}' | sed "s/{//g;s/}//g;/^$/d;s/\"name\"://g;s/\"//g")
+if [[ "$USER_EXISTING" = *"M_NOT_FOUND"* ]]
+    then echo ""; echo "Username not found, aborting"; echo ""; return
+fi
 if [ -z "$2" ]; then help_user; return
 elif [ "$2" = "displayname" ]
     then echo "setting displayname to $3"
